@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>RFP Search</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: 0.5rem; }
+    form { margin-bottom: 1rem; }
+    input[type="text"] { padding: 0.4rem; }
+    button { padding: 0.4rem 0.8rem; cursor: pointer; }
+    li { margin-bottom: 1.2rem; }
+    small { color: #555; }
+    .pagination a { margin-right: 0.6rem; }
+  </style>
+</head>
+<body>
+  <h1>RFP Search</h1>
+
+  <form method="get" action="/">
+    <input
+      type="text"
+      name="q"
+      value="{{ query }}"
+      placeholder="Search RFPs (e.g. climate tech, permitting platform)..."
+      style="width:60%;"
+    />
+    <label>
+      <input type="radio" name="mode" value="semantic"
+             {% if mode == 'semantic' %}checked{% endif %}>
+      Semantic
+    </label>
+    <label>
+      <input type="radio" name="mode" value="tfidf"
+             {% if mode == 'tfidf' %}checked{% endif %}>
+      Keyword (TF-IDF)
+    </label>
+    <button type="submit">Search</button>
+  </form>
+
+  <form method="post" action="/refresh-local" style="margin-bottom: 1.5rem;">
+    <button type="submit">Refresh from current rfp.csv</button>
+  </form>
+
+  {% if query and not results %}
+    <p>No results found for <strong>{{ query }}</strong>.</p>
+  {% endif %}
+
+  {% if results %}
+    <p>Showing {{ results|length }} of {{ total }} results (page {{ page }} of {{ total_pages }}).</p>
+    <ol start="{{ (page - 1) * per_page + 1 }}">
+      {% for r in results %}
+        <li>
+          <strong>
+            {% if r.url %}
+              <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.title }}</a>
+            {% else %}
+              {{ r.title }}
+            {% endif %}
+          </strong><br>
+          <small>
+            {% if r.agency %}{{ r.agency }}{% endif %}
+            {% if r.deadline %} | Due: {{ r.deadline }}{% endif %}
+            | Score: {{ r.score }}
+          </small>
+          {% if r.snippet %}
+            <p>{{ r.snippet }}...</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+
+    <div class="pagination">
+      {% if page > 1 %}
+        <a href="/?q={{ query }}&mode={{ mode }}&page={{ page - 1 }}&per_page={{ per_page }}">← Previous</a>
+      {% endif %}
+      {% if page < total_pages %}
+        <a href="/?q={{ query }}&mode={{ mode }}&page={{ page + 1 }}&per_page={{ per_page }}">Next →</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</body>
+</html>
